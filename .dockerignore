@@ -1,0 +1,33 @@
+# Build context excludes — keep the image small and never ship secrets/local data
+.git
+.gitignore
+node_modules
+.next
+out
+build
+
+# secrets & local env (runtime env is provided via compose / the host)
+.env
+.env.*
+
+# local SQLite database (production DB lives on the /data volume)
+prisma/dev.db
+prisma/*.db
+prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
+
+# locally uploaded images (production uploads live on a volume)
+public/uploads/*
+!public/uploads/.gitkeep
+
+# misc
+*.log
+.vscode
+.idea
+Dockerfile
+docker-compose.yml
+README.md
+DEPLOY.md
+CLAUDE.md
+AGENTS.md

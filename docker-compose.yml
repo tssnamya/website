@@ -1,0 +1,22 @@
+# The Style Syndicate — single-instance deployment with SQLite.
+# The database and uploaded images live on named volumes, so they survive
+# `docker compose down`, restarts and redeploys. Keep ONE instance (SQLite is
+# single-writer). Back up the `tss-db` volume regularly.
+
+services:
+  web:
+    build: .
+    image: the-style-syndicate
+    container_name: the-style-syndicate
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.production
+    volumes:
+      - tss-db:/data # SQLite database (DATABASE_URL=file:/data/prod.db)
+      - tss-uploads:/app/public/uploads # uploaded product images
+
+volumes:
+  tss-db:
+  tss-uploads:
