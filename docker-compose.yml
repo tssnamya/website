@@ -1,22 +1,46 @@
-# The Style Syndicate — single-instance deployment with SQLite.
-# The database and uploaded images live on named volumes, so they survive
-# `docker compose down`, restarts and redeploys. Keep ONE instance (SQLite is
-# single-writer). Back up the `tss-db` volume regularly.
+# The Style Syndicate — self-hosted deployment (PostgreSQL).
+# Runs the app + a Postgres database. The database and uploaded images live on
+# named volumes, so they persist across restarts and redeploys.
+#
+#   docker compose up -d --build
+#
+# For local development you can start just the database:  docker compose up -d db
+# (it is exposed on host port 5433; point your local .env DATABASE_URL there).
 
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: tss-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tss
+      POSTGRES_PASSWORD: tsspass
+      POSTGRES_DB: tss
+    volumes:
+      - tss-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" # host:container — for local dev tools / `npm run dev`
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tss"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
   web:
     build: .
     image: the-style-syndicate
     container_name: the-style-syndicate
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "3000:3000"
     env_file:
       - .env.production
     volumes:
-      - tss-db:/data # SQLite database (DATABASE_URL=file:/data/prod.db)
-      - tss-uploads:/app/public/uploads # uploaded product images
+      - tss-uploads:/app/public/uploads
 
 volumes:
-  tss-db:
+  tss-pgdata:
   tss-uploads:

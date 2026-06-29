@@ -1,6 +1,6 @@
-# The Style Syndicate — production image.
-# Keeps SQLite + local image uploads; both live on mounted volumes so they
-# persist across container restarts and redeploys.
+# The Style Syndicate — production image (PostgreSQL).
+# Uploaded images live on a mounted volume; the database is an external Postgres
+# (the bundled `db` service in docker-compose, or a managed Postgres / Neon).
 
 FROM node:20-bookworm-slim
 
@@ -11,23 +11,26 @@ RUN apt-get update \
 
 WORKDIR /app
 
-# SQLite database lives on the /data volume (overridable via env at runtime).
-ENV DATABASE_URL="file:/data/prod.db"
+# Dummy URLs so Prisma Client can be generated/instantiated during the build.
+# No connection is made at build time; real values come from the environment.
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
+ENV DIRECT_URL="postgresql://build:build@localhost:5432/build?schema=public"
 
-# Install dependencies (dev deps are needed for the Next.js build).
+# Install deps. prisma/ is copied first so the `postinstall` (prisma generate)
+# has the schema available.
 COPY package.json package-lock.json ./
+COPY prisma ./prisma
 RUN npm ci
 
-# Copy the source and build the app + Prisma client.
+# Copy the source and build.
 COPY . .
-RUN npx prisma generate && npm run build
+RUN npm run build
 
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Volume mount points for the database and uploaded images.
-RUN mkdir -p /data /app/public/uploads && chmod +x ./docker-entrypoint.sh
+RUN mkdir -p /app/public/uploads && chmod +x ./docker-entrypoint.sh
 
 EXPOSE 3000
 ENTRYPOINT ["./docker-entrypoint.sh"]

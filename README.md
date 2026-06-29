@@ -22,7 +22,7 @@ There are exactly **two modules**: the customer **storefront** (`/`) and the
 | Framework    | **Next.js 16** (App Router) · React 19 · TypeScript              |
 | Styling / UI | Tailwind CSS v4 · shadcn/ui · Framer Motion · lucide-react       |
 | Backend      | Next.js Server Actions + Route Handlers                         |
-| Database     | Prisma ORM — **SQLite** in dev, **PostgreSQL**-ready            |
+| Database     | Prisma ORM — **PostgreSQL** (Neon on Vercel; local via Docker)  |
 | Auth         | Secure JWT session (jose, HS256) in an httpOnly cookie · bcryptjs |
 | Validation   | Zod + React Hook Form (client **and** server)                   |
 | Images       | **sharp** (optimize + thumbnail) → local `public/uploads/` in dev, Cloudinary in prod |
@@ -36,14 +36,18 @@ There are exactly **two modules**: the customer **storefront** (`/`) and the
 ## Quick start
 
 ```bash
-npm install                 # install dependencies
+npm install                 # install dependencies (also generates the Prisma client)
 cp .env.example .env        # then edit values (see below)
 
-npm run db:migrate          # create SQLite DB + apply migrations
+docker compose up -d db     # start local PostgreSQL on :5433 (matches .env defaults)
+npm run db:migrate          # apply migrations
 npm run db:seed             # seed demo products + admin user + counter + settings
 
 npm run dev                 # http://localhost:3000
 ```
+
+> **Deploying to Vercel?** See **[VERCEL.md](VERCEL.md)**. Self-hosting with Docker?
+> See **[DEPLOY.md](DEPLOY.md)** (`docker compose up -d --build` runs the app + Postgres).
 
 - **Storefront:** <http://localhost:3000>
 - **Admin:** <http://localhost:3000/admin> (no public link — bookmark it)
@@ -66,7 +70,8 @@ this is editable from **`/admin/settings`** with no code or `.env` changes.
 
 | Variable                               | Purpose                                               |
 | -------------------------------------- | ----------------------------------------------------- |
-| `DATABASE_URL`                         | `file:./dev.db` (SQLite) or a Postgres connection URL |
+| `DATABASE_URL`                         | Postgres **pooled** connection string (app runtime) |
+| `DIRECT_URL`                           | Postgres **direct** connection string (migrations)  |
 | `AUTH_SECRET`                          | Session signing secret (≥ 32 chars). **Change it.**   |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD`       | Seeded admin credentials (`npm run db:seed`)          |
 | `NEXT_PUBLIC_STORE_NAME`               | Initial brand name                                    |
@@ -335,19 +340,20 @@ src/
 
 ---
 
-## Going to production (Postgres)
+## Going to production
 
-1. In `prisma/schema.prisma`, change the datasource provider to `postgresql`.
-2. Set `DATABASE_URL` to your Neon/Supabase connection string.
-3. `npx prisma migrate deploy` then `npm run db:seed`.
+The database is **PostgreSQL** and the build is wired for serverless. Two paths:
 
-The schema is portable (no DB enums/arrays) and indexes the hot columns, so this is
-a one-line change plus the URL.
+- **Vercel (recommended)** — full step-by-step in **[VERCEL.md](VERCEL.md)**: create
+  a Neon Postgres + Cloudinary, import the repo, set env vars, set the Build Command
+  to `npm run vercel-build` (which runs `prisma migrate deploy`, bootstraps the admin,
+  then builds). Deploys on every `git push`.
+- **Self-hosted Docker** — see **[DEPLOY.md](DEPLOY.md)**: `docker compose up -d --build`
+  runs the app + a Postgres database with persistent volumes.
 
-**Connection pooling:** on serverless (Vercel), use a pooled connection string
-(Neon's pooled endpoint or Supabase/PgBouncer) and append
-`?pgbouncer=true&connection_limit=1`. The Prisma client is already a singleton
-(`lib/db.ts`).
+**Connection pooling (serverless):** `DATABASE_URL` is the Neon **pooled** endpoint
+(used at runtime); `DIRECT_URL` is the **direct** endpoint (used for migrations). The
+Prisma client is a singleton (`lib/db.ts`).
 
 **Image storage:** serverless filesystems are ephemeral, so **set the Cloudinary
 env vars in production** — the upload route then streams optimized buffers to

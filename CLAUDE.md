@@ -46,7 +46,7 @@ panel (`/admin`). There is no separate homepage — `/` is the catalog.
 | Framework | **Next.js 16** (App Router) · React 19 · TypeScript |
 | Styling/UI | Tailwind CSS v4 · shadcn/ui (radix-ui unified pkg) · Framer Motion · lucide-react |
 | Backend | Next.js Server Actions + Route Handlers |
-| ORM/DB | Prisma 6 · **SQLite in dev** (`prisma/dev.db`), **PostgreSQL-ready** |
+| ORM/DB | Prisma 6 · **PostgreSQL** (local: `docker compose up -d db` on :5433; prod: Neon/Vercel). `directUrl` for migrations. |
 | Auth | Custom JWT session (jose, HS256) in an httpOnly cookie · bcryptjs |
 | Validation | Zod + React Hook Form (client and server) |
 | Images | **sharp** (optimize/thumbnail) → local `public/uploads` in dev, Cloudinary in prod |
@@ -173,7 +173,7 @@ URL. `proxy.ts` guards all `/admin/*` except `/admin/login`. Public pages are `/
 
 ### Full schema (`prisma/schema.prisma`)
 
-Provider is `sqlite` in dev (switch to `postgresql` for prod). All money fields are
+Provider is `postgresql` (Neon in prod, local Docker Postgres in dev). All money fields are
 **integer rupees (INR)**. No DB-native enums/arrays are used, so the schema is portable
 between SQLite and PostgreSQL with no model changes. String "enums" (status fields) are
 validated in app code via Zod + the unions in `src/lib/constants.ts`.
@@ -184,8 +184,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite" // switch to "postgresql" for production
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled connection (app runtime)
+  directUrl = env("DIRECT_URL") // direct connection (migrations)
 }
 
 model Product {
