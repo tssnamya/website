@@ -22,10 +22,19 @@ const geistMono = Geist_Mono({
   display: "swap",
 })
 
+// Resolve the public site URL: explicit override, else Vercel's production
+// domain (so social/WhatsApp share previews use absolute, live image URLs).
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000")
+
+const shareDescription =
+  "Thoughtfully designed polo and round neck T-shirts. Choose your size and place your order through WhatsApp."
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-  ),
+  metadataBase: new URL(siteUrl),
   title: {
     default: `${publicConfig.storeName} | Polo & Round Neck T-Shirts`,
     template: `%s | ${publicConfig.storeName}`,
@@ -34,9 +43,18 @@ export const metadata: Metadata = {
     "Explore our collection of thoughtfully designed polo and round neck T-shirts. Choose your preferred size and place your order through WhatsApp.",
   openGraph: {
     title: `${publicConfig.storeName} | Polo & Round Neck T-Shirts`,
-    description:
-      "Thoughtfully designed polo and round neck T-shirts. Choose your size and place your order through WhatsApp.",
+    description: shareDescription,
     type: "website",
+    siteName: publicConfig.storeName,
+    images: [
+      { url: "/logo.png", width: 1254, height: 1254, alt: publicConfig.storeName },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: `${publicConfig.storeName} | Polo & Round Neck T-Shirts`,
+    description: shareDescription,
+    images: ["/logo.png"],
   },
 }
 
