@@ -113,6 +113,7 @@ export interface CatalogParams {
   q?: string
   category?: string
   sort?: CatalogSort
+  size?: Size
 }
 
 export async function getCatalogProducts(
@@ -136,7 +137,13 @@ export async function getCatalogProducts(
     orderBy,
   })
   const reserved = await computeReservedMap(products.map((p) => p.id))
-  return products.map((p) => shapeProduct(p, reserved))
+  const shaped = products.map((p) => shapeProduct(p, reserved))
+
+  // Filter to products with available stock in the requested size.
+  if (params.size && (SIZES as readonly string[]).includes(params.size)) {
+    return shaped.filter((p) => p.availableBySize[params.size!] > 0)
+  }
+  return shaped
 }
 
 export async function getCategories(): Promise<string[]> {

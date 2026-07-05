@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { SIZES } from "@/lib/constants"
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest" },
@@ -26,6 +27,7 @@ export function CatalogControls({ categories }: { categories: string[] }) {
 
   const [query, setQuery] = useState(searchParams.get("q") ?? "")
   const category = searchParams.get("category") ?? "all"
+  const size = searchParams.get("size") ?? "all"
   const sort = searchParams.get("sort") ?? "newest"
 
   // Keep local input in sync if the URL changes externally (e.g. back button).
@@ -78,7 +80,7 @@ export function CatalogControls({ categories }: { categories: string[] }) {
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Select
           value={category}
           onValueChange={(v) => pushParams({ category: v })}
@@ -91,6 +93,20 @@ export function CatalogControls({ categories }: { categories: string[] }) {
             {categories.map((c) => (
               <SelectItem key={c} value={c}>
                 {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={size} onValueChange={(v) => pushParams({ size: v })}>
+          <SelectTrigger className="h-10 w-[120px]" aria-label="Filter by size">
+            <SelectValue placeholder="Size" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All sizes</SelectItem>
+            {SIZES.map((s) => (
+              <SelectItem key={s} value={s}>
+                Size {s}
               </SelectItem>
             ))}
           </SelectContent>

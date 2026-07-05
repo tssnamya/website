@@ -7,6 +7,7 @@ import {
   getCategories,
   type CatalogSort,
 } from "@/server/queries"
+import { SIZES, type Size } from "@/lib/constants"
 import { publicConfig } from "@/lib/config"
 
 export const dynamic = "force-dynamic"
@@ -15,6 +16,7 @@ type SearchParams = Promise<{
   q?: string
   category?: string
   sort?: string
+  size?: string
 }>
 
 function CatalogSkeleton() {
@@ -36,9 +38,12 @@ async function Catalog({ params }: { params: SearchParams }) {
   const sort = (["newest", "price-asc", "price-desc"].includes(sp.sort ?? "")
     ? sp.sort
     : "newest") as CatalogSort
+  const size = (SIZES as readonly string[]).includes(sp.size ?? "")
+    ? (sp.size as Size)
+    : undefined
 
   const [products, categories] = await Promise.all([
-    getCatalogProducts({ q: sp.q, category: sp.category, sort }),
+    getCatalogProducts({ q: sp.q, category: sp.category, sort, size }),
     getCategories(),
   ])
 
