@@ -26,8 +26,15 @@ import {
   SUGGESTED_CATEGORIES,
   FIT_TYPES,
   type ProductStatus,
+  type Size,
 } from "@/lib/constants"
 import type { ShapedProduct, ProductImageInput } from "@/lib/types"
+
+interface SizeMeasure {
+  chest: string
+  shoulder: string
+  length: string
+}
 
 interface FormValues {
   name: string
@@ -45,7 +52,10 @@ interface FormValues {
   stockM: string
   stockL: string
   stockXL: string
+  sizeChart: Record<Size, SizeMeasure>
 }
+
+const numToStr = (v: number | null | undefined) => (v != null ? String(v) : "")
 
 export function ProductForm({
   product,
@@ -84,6 +94,16 @@ export function ProductForm({
       stockM: String(product?.stockBySize.M ?? 0),
       stockL: String(product?.stockBySize.L ?? 0),
       stockXL: String(product?.stockBySize.XL ?? 0),
+      sizeChart: Object.fromEntries(
+        SIZES.map((s) => [
+          s,
+          {
+            chest: numToStr(product?.sizeChart?.[s]?.chest),
+            shoulder: numToStr(product?.sizeChart?.[s]?.shoulder),
+            length: numToStr(product?.sizeChart?.[s]?.length),
+          },
+        ]),
+      ) as Record<Size, SizeMeasure>,
     },
   })
 
@@ -108,6 +128,7 @@ export function ProductForm({
       status: values.status,
       images,
       stock: { M: values.stockM, L: values.stockL, XL: values.stockXL },
+      sizeChart: values.sizeChart,
     }
 
     const res =
@@ -313,22 +334,59 @@ export function ProductForm({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Inventory by size</CardTitle>
+              <CardTitle className="text-base">Inventory &amp; Sizing</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {SIZES.map((s) => (
-                <div key={s} className="space-y-1.5">
-                  <Label htmlFor={`stock${s}`}>Size {s} stock</Label>
-                  <Input
-                    id={`stock${s}`}
-                    type="number"
-                    min={0}
-                    {...register(`stock${s}` as "stockM" | "stockL" | "stockXL")}
-                  />
+                <div key={s} className="space-y-2 rounded-lg border border-border p-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`stock${s}`} className="font-medium">
+                      Size {s} — stock
+                    </Label>
+                    <Input
+                      id={`stock${s}`}
+                      type="number"
+                      min={0}
+                      {...register(`stock${s}` as "stockM" | "stockL" | "stockXL")}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Chest (in)</Label>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        min={0}
+                        placeholder="—"
+                        {...register(`sizeChart.${s}.chest` as const)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Shoulder</Label>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        min={0}
+                        placeholder="—"
+                        {...register(`sizeChart.${s}.shoulder` as const)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Length</Label>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        min={0}
+                        placeholder="—"
+                        {...register(`sizeChart.${s}.length` as const)}
+                      />
+                    </div>
+                  </div>
                 </div>
               ))}
               <p className="text-xs text-muted-foreground">
-                Stock only decreases when an order is marked <b>Paid</b>.
+                Stock only decreases when an order is marked <b>Paid</b>. Measurements
+                (inches) appear on the product&apos;s size chart, leave blank to hide.
               </p>
             </CardContent>
           </Card>

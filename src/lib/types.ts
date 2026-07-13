@@ -15,6 +15,15 @@ export interface SizeStock {
   stock: number
 }
 
+/** Per-size garment measurements in inches (any field may be unset). */
+export interface SizeMeasurement {
+  chest: number | null
+  shoulder: number | null
+  length: number | null
+}
+
+export type ProductSizeChart = Record<Size, SizeMeasurement>
+
 /** Serializable product shape used across customer & admin UIs. */
 export interface ShapedProduct {
   id: string
@@ -45,6 +54,7 @@ export interface ShapedProduct {
   totalStock: number // physical
   reservedTotal: number
   availableTotal: number
+  sizeChart: ProductSizeChart
   createdAt: string
 }
 

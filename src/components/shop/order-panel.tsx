@@ -46,7 +46,7 @@ export function OrderPanel({
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Select size</span>
-          <SizeChart />
+          <SizeChart chart={product.sizeChart} />
         </div>
         <div className="flex flex-wrap gap-2">
           {SIZES.map((s) => {

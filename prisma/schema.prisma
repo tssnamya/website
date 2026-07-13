@@ -32,6 +32,7 @@ model Product {
   washInstructions String   @default("")
   status           String   @default("DRAFT") // ACTIVE | INACTIVE | DRAFT
   archivedAt       DateTime? // soft delete: hidden everywhere but order history preserved
+  sizeChart        String? // JSON: size -> {chest,shoulder,length} in inches (per-product)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

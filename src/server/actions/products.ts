@@ -3,12 +3,21 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { db } from "@/lib/db"
-import { productSchema, inventoryUpdateSchema } from "@/lib/validations"
+import { productSchema, inventoryUpdateSchema, type ProductInput } from "@/lib/validations"
 import { requireAdmin } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 import { SIZES, type ProductStatus, PRODUCT_STATUSES } from "@/lib/constants"
 import { slugify } from "@/lib/format"
 import type { ActionResult } from "@/lib/types"
+
+/** JSON-encode the per-size measurements, or null when nothing is filled in. */
+function serializeSizeChart(sc: ProductInput["sizeChart"]): string | null {
+  if (!sc) return null
+  const hasAny = SIZES.some(
+    (s) => sc[s].chest != null || sc[s].shoulder != null || sc[s].length != null,
+  )
+  return hasAny ? JSON.stringify(sc) : null
+}
 
 async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
   const root = base || "product"
@@ -62,6 +71,7 @@ export async function createProduct(
       fitType: d.fitType ?? "",
       washInstructions: d.washInstructions ?? "",
       status: d.status,
+      sizeChart: serializeSizeChart(d.sizeChart),
       images: {
         create: d.images.map((img, i) => ({
           url: img.url,
@@ -117,6 +127,7 @@ export async function updateProduct(
         fitType: d.fitType ?? "",
         washInstructions: d.washInstructions ?? "",
         status: d.status,
+        sizeChart: serializeSizeChart(d.sizeChart),
       },
     })
 
@@ -179,6 +190,7 @@ export async function duplicateProduct(
       fitType: src.fitType,
       washInstructions: src.washInstructions,
       status: "DRAFT",
+      sizeChart: src.sizeChart,
       images: {
         create: src.images.map((img, i) => ({
           url: img.url,

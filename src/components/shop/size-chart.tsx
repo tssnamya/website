@@ -17,15 +17,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { SIZES } from "@/lib/constants"
+import type { ProductSizeChart } from "@/lib/types"
 
-// Indicative measurements (inches). Adjust per your actual production specs.
-const CHART = [
-  { size: "M", chest: 40, length: 28, shoulder: 17.5 },
-  { size: "L", chest: 42, length: 29, shoulder: 18.5 },
-  { size: "XL", chest: 44, length: 30, shoulder: 19.5 },
-]
+function fmt(v: number | null): string {
+  return v == null ? "—" : `${v}"`
+}
 
-export function SizeChart() {
+export function SizeChart({ chart }: { chart: ProductSizeChart }) {
+  // Only show sizes that have at least one measurement filled in.
+  const rows = SIZES.filter(
+    (s) =>
+      chart[s].chest != null ||
+      chart[s].shoulder != null ||
+      chart[s].length != null,
+  )
+  if (rows.length === 0) return null
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -48,17 +56,17 @@ export function SizeChart() {
             <TableRow>
               <TableHead>Size</TableHead>
               <TableHead className="text-right">Chest</TableHead>
-              <TableHead className="text-right">Length</TableHead>
               <TableHead className="text-right">Shoulder</TableHead>
+              <TableHead className="text-right">Length</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {CHART.map((row) => (
-              <TableRow key={row.size}>
-                <TableCell className="font-medium">{row.size}</TableCell>
-                <TableCell className="text-right">{row.chest}</TableCell>
-                <TableCell className="text-right">{row.length}</TableCell>
-                <TableCell className="text-right">{row.shoulder}</TableCell>
+            {rows.map((s) => (
+              <TableRow key={s}>
+                <TableCell className="font-medium">{s}</TableCell>
+                <TableCell className="text-right">{fmt(chart[s].chest)}</TableCell>
+                <TableCell className="text-right">{fmt(chart[s].shoulder)}</TableCell>
+                <TableCell className="text-right">{fmt(chart[s].length)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

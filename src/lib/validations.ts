@@ -65,6 +65,22 @@ const optionalPositiveInt = z.preprocess(
   z.coerce.number().int().min(0).max(10000000).nullable(),
 )
 
+// A garment measurement in inches (decimals allowed, e.g. 27.5). Optional.
+const optionalMeasurement = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? null : v),
+  z.coerce.number().min(0).max(200).nullable(),
+)
+const measurementSchema = z.object({
+  chest: optionalMeasurement,
+  shoulder: optionalMeasurement,
+  length: optionalMeasurement,
+})
+const sizeChartSchema = z.object({
+  M: measurementSchema,
+  L: measurementSchema,
+  XL: measurementSchema,
+})
+
 // Image references are uploaded files: an absolute URL (Cloudinary) or a
 // site-relative path (local /uploads). No free-form URL pasting.
 const uploadedImageRef = z
@@ -102,6 +118,7 @@ export const productSchema = z.object({
   status: z.enum(PRODUCT_STATUSES),
   images: z.array(productImageSchema).max(12).default([]),
   stock: stockSchema,
+  sizeChart: sizeChartSchema.optional(),
 })
 export type ProductInput = z.infer<typeof productSchema>
 

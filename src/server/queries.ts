@@ -14,12 +14,36 @@ import type {
   DashboardStats,
   AuditEntry,
   AnalyticsData,
+  ProductSizeChart,
 } from "@/lib/types"
 import type { Prisma } from "@prisma/client"
 
 type ProductWithRelations = Prisma.ProductGetPayload<{
   include: { images: true; inventory: true }
 }>
+
+function parseProductSizeChart(raw: string | null): ProductSizeChart {
+  const chart = Object.fromEntries(
+    SIZES.map((s) => [s, { chest: null, shoulder: null, length: null }]),
+  ) as ProductSizeChart
+  if (!raw) return chart
+  try {
+    const parsed = JSON.parse(raw) as Record<string, Record<string, unknown>>
+    for (const s of SIZES) {
+      const m = parsed?.[s]
+      if (m && typeof m === "object") {
+        chart[s] = {
+          chest: typeof m.chest === "number" ? m.chest : null,
+          shoulder: typeof m.shoulder === "number" ? m.shoulder : null,
+          length: typeof m.length === "number" ? m.length : null,
+        }
+      }
+    }
+  } catch {
+    // ignore malformed JSON, return the empty chart
+  }
+  return chart
+}
 
 /** Active reservations grouped by `${productId}:${size}`. */
 async function computeReservedMap(
@@ -102,6 +126,7 @@ function shapeProduct(
     totalStock,
     reservedTotal,
     availableTotal,
+    sizeChart: parseProductSizeChart(p.sizeChart),
     createdAt: p.createdAt.toISOString(),
   }
 }
